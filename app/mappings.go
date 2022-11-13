@@ -13,4 +13,5 @@ func MapUrls() {
 	router.POST("/user/create", users.CreateUser)
 	router.POST("/linkData/create", link.CreateLinkData)
 	router.POST("/cron/click", link.UrlClicked)
+	router.GET("link/redirect", link.Redirect)
 }

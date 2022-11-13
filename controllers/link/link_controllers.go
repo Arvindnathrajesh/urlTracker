@@ -35,3 +35,13 @@ func UrlClicked(c *gin.Context) {
 
 	c.JSON(http.StatusOK, linkLog)
 }
+
+func Redirect(c *gin.Context) {
+	shortUrl := c.Query("shortUrl")
+	linkData, restErr := services.Redirect(shortUrl)
+	if restErr != nil {
+		c.JSON(restErr.Status, restErr)
+		return
+	}
+	c.Redirect(http.StatusTemporaryRedirect, linkData.Url)
+}

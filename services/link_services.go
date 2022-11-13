@@ -34,6 +34,12 @@ func UrlClicked() (bool, *utils.RestErr) {
 	return true, nil
 }
 
+func Redirect(shortUrl string) (*domain.LinkData, *utils.RestErr) {
+
+	linkData, nil := FindLinkData(shortUrl)
+	return linkData, nil
+}
+
 func FindLinkData(shortUrl string) (*domain.LinkData, *utils.RestErr) {
 	linkData, restErr := domain.FindLinkData(shortUrl)
 	if restErr != nil {
