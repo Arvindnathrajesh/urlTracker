@@ -4,14 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"time"
 
 	"../utils"
-
 	"github.com/monaco-io/request"
+	"github.com/thanhpk/randstr"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+type Link_Click_Struct struct {
+	Date   string
+	Clicks int
+}
+type Response struct {
+	Link_Clicks []Link_Click_Struct
+}
 
 func Create(user *User) (*User, *utils.RestErr) {
 	usersC := db.Collection("users")
@@ -22,8 +33,6 @@ func Create(user *User) (*User, *utils.RestErr) {
 		"email":    user.Email,
 		"password": user.Password,
 	})
-	fmt.Println(result)
-	fmt.Println(err)
 	if err != nil {
 		restErr := utils.InternalErr("can't insert user to the database.")
 		return nil, restErr
@@ -33,27 +42,49 @@ func Create(user *User) (*User, *utils.RestErr) {
 	return user, nil
 }
 
-// Params:  map[string]string{"hello": "world"},
-
 func crateUrlShortner(url string) string {
 	var result interface{}
+	token := "38419ca28f8f4a6495303228b148c45c58937c89"
 
 	client := request.Client{
 		URL:    "https://api-ssl.bitly.com/v4/bitlinks",
 		Method: "POST",
 		JSON:   bson.M{"long_url": url},
-		Bearer: "38419ca28f8f4a6495303228b148c45c58937c89",
+		Bearer: token,
 	}
 	if err := client.Send().Scan(&result).Error(); err != nil {
-		return "Create URL failed"
+		log.Fatal(err)
 	}
 
 	str := client.Send().String()
 	x := map[string]string{}
 
 	json.Unmarshal([]byte(str), &x)
-	fmt.Println(x)
 	return x["id"]
+}
+
+func getClicksBitlink(shortUrl string) *[]Link_Click_Struct {
+
+	token := "38419ca28f8f4a6495303228b148c45c58937c89"
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://api-ssl.bitly.com/v4/bitlinks/"+shortUrl+"/clicks?unit=minute&units=-1", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var x Response
+	json.Unmarshal(bodyText, &x)
+	return &x.Link_Clicks
 }
 
 func CreateLinkData(linkData *LinkData) (*LinkData, *utils.RestErr) {
@@ -66,7 +97,6 @@ func CreateLinkData(linkData *LinkData) (*LinkData, *utils.RestErr) {
 		"useCase":  linkData.UseCase,
 		"userId":   linkData.UserId,
 	})
-	fmt.Println(err)
 	if err != nil {
 		restErr := utils.InternalErr("can't insert linkData to the database.")
 		return nil, restErr
@@ -74,28 +104,6 @@ func CreateLinkData(linkData *LinkData) (*LinkData, *utils.RestErr) {
 	linkData.ID = result.InsertedID.(primitive.ObjectID)
 	return linkData, nil
 }
-
-// func CreateUserLinkData(url string, userPhone string) (*UserLinkData, *utils.RestErr) {
-// 	userLinkDatasC := db.Collection("UserLinkData")
-// 	ctx, _ := context.WithTimeout(context.Background(), time.Second*20)
-// 	result, err := userLinkDatasC.InsertOne(ctx, bson.M{
-// 		"url":        url,
-// 		"userPhone":  userPhone,
-// 		"clickCount": 1,
-// 	})
-// 	if err != nil {
-// 		restErr := utils.InternalErr("can't insert userLinkData to the database.")
-// 		return nil, restErr
-// 	}
-// 	var userLinkData UserLinkData
-// 	errFind := userLinkDatasC.FindOne(ctx, bson.M{"url": url, "userPhone": userPhone}).Decode(&userLinkData)
-// 	if errFind != nil {
-// 		restErr := utils.NotFound("userLinkData not found.")
-// 		return nil, restErr
-// 	}
-// 	userLinkData.ID = result.InsertedID.(primitive.ObjectID)
-// 	return &userLinkData, nil
-// }
 
 func Find(email string) (*User, *utils.RestErr) {
 	var user User
@@ -109,23 +117,30 @@ func Find(email string) (*User, *utils.RestErr) {
 	return &user, nil
 }
 
-// func UrlClicked(url string, userPhone string) (*UserLinkData, *utils.RestErr) {
-// 	var userLinkData UserLinkData
-// 	userLinkDatasC := db.Collection("UserLinkData")
+func UrlClicked(shortUrl string) (bool, *utils.RestErr) {
 
-// 	fmt.Println(url)
-// 	fmt.Println(userPhone)
-// 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-// 	err := userLinkDatasC.FindOne(ctx, bson.M{"url": url, "userPhone": userPhone}).Decode(&userLinkData)
+	LinkLogC := db.Collection("LinkLog")
+	resp := getClicksBitlink(shortUrl)
 
-// 	fmt.Println(userLinkData)
-// 	if err != nil {
-// 		CreateUserLinkData(url, userPhone)
-// 	} else {
-// 		UpdateUserLinkData(&userLinkData)
-// 	}
-// 	return &userLinkData, nil
-// }
+	for i := 0; i < len(*resp); i++ {
+
+		for j := 0; j < (*resp)[i].Clicks; j++ {
+			ctx, _ := context.WithTimeout(context.Background(), time.Second*20)
+			result, err := LinkLogC.InsertOne(ctx, bson.M{
+				"logId":    randstr.Hex(16),
+				"shortUrl": shortUrl,
+				"date":     (*resp)[i].Date,
+			})
+			if err != nil {
+				restErr := utils.InternalErr("can't insert linkData to the database.")
+				return false, restErr
+			}
+			fmt.Println(result)
+		}
+	}
+
+	return true, nil
+}
 
 func FindLinkData(shortUrl string) (*LinkData, *utils.RestErr) {
 	var linkData LinkData
@@ -136,45 +151,32 @@ func FindLinkData(shortUrl string) (*LinkData, *utils.RestErr) {
 		restErr := utils.NotFound("LinkData not found.")
 		return nil, restErr
 	}
-	// fmt.Println(shortUrl)
-	// fmt.Println(linkData)
 	return &linkData, nil
 }
 
-// func FindUserLinkData(url string, userPhone string) (*UserLinkData, *utils.RestErr) {
-// 	var userLinkData UserLinkData
-// 	userLinkDatasC := db.Collection("UserLinkData")
-// 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-// 	err := userLinkDatasC.FindOne(ctx, bson.M{"url": url, "userPhone": userPhone}).Decode(&userLinkData)
-// 	if err != nil {
-// 		restErr := utils.NotFound("UserLinkData not found.")
-// 		return nil, restErr
-// 	}
-// 	return &userLinkData, nil
-// }
-
-// func UpdateUserLinkData(userLinkData *UserLinkData) (*UserLinkData, *utils.RestErr) {
-// 	UserLinkDatasC := db.Collection("UserLinkData")
-// 	ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
-// 	result, err := UserLinkDatasC.UpdateOne(ctx, bson.M{"url": userLinkData.Url, "userPhone": userLinkData.UserPhone}, bson.M{"$set": bson.M{"clickCount": userLinkData.ClickCount + 1}})
-// 	if err != nil {
-// 		restErr := utils.InternalErr("can not update.")
-// 		return nil, restErr
-// 	}
-// 	if result.MatchedCount == 0 {
-// 		restErr := utils.NotFound("userLinkData not found.")
-// 		return nil, restErr
-// 	}
-// 	if result.ModifiedCount == 0 {
-// 		restErr := utils.BadRequest("no such field")
-// 		return nil, restErr
-// 	}
-// 	userLinkData, restErr := FindUserLinkData(userLinkData.Url, userLinkData.UserPhone)
-// 	if restErr != nil {
-// 		return nil, restErr
-// 	}
-// 	return userLinkData, restErr
-// }
+func FindLinksData() (*[]LinkData, *utils.RestErr) {
+	var results []LinkData
+	linkDatasC := db.Collection("LinkData")
+	cursor, err := linkDatasC.Find(context.TODO(), bson.D{})
+	if err != nil {
+		restErr := utils.NotFound("LinkData not found.")
+		return nil, restErr
+	}
+	for cursor.Next(context.TODO()) {
+		//Create a value into which the single document can be decoded
+		var elem LinkData
+		err := cursor.Decode(&elem)
+		if err != nil {
+			log.Fatal(err)
+		}
+		results = append(results, elem)
+	}
+	if err := cursor.Err(); err != nil {
+		log.Fatal(err)
+	}
+	cursor.Close(context.TODO())
+	return &results, nil
+}
 
 func Update(email string, field string, value string) (*User, *utils.RestErr) {
 	usersC := db.Collection("users")

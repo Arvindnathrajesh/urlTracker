@@ -1,6 +1,7 @@
 package app
 
 import (
+	"../controllers/link"
 	"../controllers/ping"
 	"../controllers/users"
 )
@@ -10,6 +11,6 @@ func MapUrls() {
 	router.GET("/user/find", users.FindUser)
 	router.GET("/user/update", users.UpdateUser)
 	router.POST("/user/create", users.CreateUser)
-	router.POST("/linkData/create", users.CreateLinkData)
-	// router.GET("/click", users.UrlClicked)
+	router.POST("/linkData/create", link.CreateLinkData)
+	router.POST("/cron/click", link.UrlClicked)
 }

@@ -24,22 +24,6 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
-func CreateLinkData(c *gin.Context) {
-	var newLinkData domain.LinkData
-	if err := c.ShouldBindJSON(&newLinkData); err != nil {
-		restErr := utils.BadRequest("Invalid json.")
-		c.JSON(restErr.Status, restErr)
-		return
-	}
-
-	linkData, restErr := services.CreateLinkData(&newLinkData)
-	if restErr != nil {
-		c.JSON(restErr.Status, restErr)
-		return
-	}
-	c.JSON(http.StatusCreated, linkData)
-}
-
 func FindUser(c *gin.Context) {
 	userEmail := c.Query("email")
 	if userEmail == "" {
@@ -54,24 +38,6 @@ func FindUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, user)
 }
-
-// func UrlClicked(c *gin.Context) {
-// 	shortUrl := c.Query("shortUrl")
-// 	usrPhone := c.Query("phone")
-// 	linkData, restErr1 := services.FindLinkData(shortUrl)
-// 	if restErr1 != nil {
-// 		c.JSON(restErr1.Status, restErr1)
-// 		return
-// 	}
-// 	fmt.Println(linkData)
-// 	userLinkData, restErr := services.UrlClicked(linkData.Url, usrPhone)
-// 	if restErr != nil {
-// 		c.JSON(restErr.Status, restErr)
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, userLinkData)
-// }
 
 func UpdateUser(c *gin.Context) {
 	userEmail := c.Query("email")
