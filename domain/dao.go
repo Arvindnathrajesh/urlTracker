@@ -38,6 +38,7 @@ func Create(user *User) (*User, *utils.RestErr) {
 		restErr := utils.InternalErr("can't insert user to the database.")
 		return nil, restErr
 	}
+
 	user.ID = result.InsertedID.(primitive.ObjectID)
 	user.Password = ""
 	return user, nil

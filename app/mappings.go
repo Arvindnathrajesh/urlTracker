@@ -14,4 +14,5 @@ func MapUrls() {
 	router.POST("/linkData/create", link.CreateLinkData) // API to create short URL
 	router.POST("/cron/click", link.UrlClicked)          // API to update and store click time on DB
 	router.GET("link/redirect", link.Redirect)           // API to redirect to a particular URL
+
 }

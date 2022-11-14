@@ -3,11 +3,10 @@ package link
 import (
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"urlTracker/domain"
 	"urlTracker/services"
 	"urlTracker/utils"
-
-	"github.com/gin-gonic/gin"
 )
 
 func CreateLinkData(c *gin.Context) {
