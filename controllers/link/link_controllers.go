@@ -3,9 +3,10 @@ package link
 import (
 	"net/http"
 
-	"../../domain"
-	"../../services"
-	"../../utils"
+	"urlTracker/domain"
+	"urlTracker/services"
+	"urlTracker/utils"
+
 	"github.com/gin-gonic/gin"
 )
 

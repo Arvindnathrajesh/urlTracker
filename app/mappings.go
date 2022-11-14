@@ -1,9 +1,9 @@
 package app
 
 import (
-	"../controllers/link"
-	"../controllers/ping"
-	"../controllers/users"
+	"urlTracker/controllers/link"
+	"urlTracker/controllers/ping"
+	"urlTracker/controllers/users"
 )
 
 func MapUrls() {

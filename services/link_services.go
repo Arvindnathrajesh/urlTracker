@@ -1,8 +1,9 @@
 package services
 
 import (
-	"../domain"
-	"../utils"
+	"urlTracker/domain"
+	"urlTracker/utils"
+
 	"github.com/mpvl/unique"
 )
 

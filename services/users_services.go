@@ -1,8 +1,8 @@
 package services
 
 import (
-	"../domain"
-	"../utils"
+	"urlTracker/domain"
+	"urlTracker/utils"
 )
 
 func CreateUser(user *domain.User) (*domain.User, *utils.RestErr) {

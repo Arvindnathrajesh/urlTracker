@@ -1,6 +1,6 @@
 package main
 
-import "./app"
+import "urlTracker/app"
 
 func main() {
 	app.StartApp()

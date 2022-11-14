@@ -1,7 +1,8 @@
 package app
 
 import (
-	"../domain"
+	"urlTracker/domain"
+
 	"github.com/gin-gonic/gin"
 )
 

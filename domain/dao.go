@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"../utils"
+	"urlTracker/utils"
+
 	"github.com/monaco-io/request"
 	"github.com/thanhpk/randstr"
 	"go.mongodb.org/mongo-driver/bson"
